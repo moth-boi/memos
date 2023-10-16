@@ -57,6 +57,7 @@ const MemoEditor = (props: Props) => {
     isUploadingResource: false,
     isRequesting: false,
   });
+  const [wordCount, setWordCount] = useState(0);
   const [hasContent, setHasContent] = useState<boolean>(false);
   const [isInIME, setIsInIME] = useState(false);
   const editorRef = useRef<EditorRefActions>(null);
@@ -262,6 +263,7 @@ const MemoEditor = (props: Props) => {
   const handleContentChange = (content: string) => {
     setHasContent(content !== "");
     setContentCache(content);
+    handleWordCount(content);
   };
 
   const handleSaveBtnClick = async () => {
@@ -376,6 +378,24 @@ const MemoEditor = (props: Props) => {
     editorRef.current?.focus();
   };
 
+  const handleWordCount = (content: string) => {
+    const pattern = /[a-zA-Z0-9_\u0392-\u03c9]+|[\u4E00-\u9FFF\u3400-\u4dbf\uf900-\ufaff\u3040-\u309f\uac00-\ud7af]+/g;
+    const m = content.match(pattern);
+    let count = 0;
+    if (m === null) {
+      setWordCount(count);
+      return;
+    }
+    for (let i = 0; i < m.length; i++) {
+      if (m[i].charCodeAt(0) >= 0x4e00) {
+        count += m[i].length;
+      } else {
+        count += 1;
+      }
+    }
+    setWordCount(count);
+  };
+
   const editorConfig = useMemo(
     () => ({
       className: "",
@@ -415,6 +435,7 @@ const MemoEditor = (props: Props) => {
             <Icon.Code className="w-5 h-5 mx-auto" onClick={handleCodeBlockBtnClick} />
           </button>
         </div>
+        <div className="inset-y-0 right-0 text-gray-600 dark:text-gray-400">{wordCount}</div>
       </div>
       <ResourceListView resourceList={state.resourceList} setResourceList={handleSetResourceList} />
       <RelationListView relationList={referenceRelations} setRelationList={handleSetRelationList} />
