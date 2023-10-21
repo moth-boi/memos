@@ -14,6 +14,7 @@ import (
 
 	"github.com/usememos/memos/common/log"
 	"github.com/usememos/memos/common/util"
+	"github.com/usememos/memos/server/service/metric"
 	"github.com/usememos/memos/store"
 )
 
@@ -193,9 +194,9 @@ func (s *APIV1Service) GetMemoList(c echo.Context) error {
 	if tag != "" {
 		contentSearch = append(contentSearch, "#"+tag)
 	}
-	contentSlice := c.QueryParams()["content"]
-	if len(contentSlice) > 0 {
-		contentSearch = append(contentSearch, contentSlice...)
+	content := c.QueryParam("content")
+	if content != "" {
+		contentSearch = append(contentSearch, content)
 	}
 	findMemoMessage.ContentSearch = contentSearch
 
@@ -387,6 +388,7 @@ func (s *APIV1Service) CreateMemo(c echo.Context) error {
 			}
 		}
 	}
+	metric.Enqueue("memo create")
 	return c.JSON(http.StatusOK, memoResponse)
 }
 
@@ -469,8 +471,9 @@ func (s *APIV1Service) GetMemoStats(c echo.Context) error {
 	normalStatus := store.Normal
 	hasParentFlag := false
 	findMemoMessage := &store.FindMemo{
-		RowStatus: &normalStatus,
-		HasParent: &hasParentFlag,
+		RowStatus:      &normalStatus,
+		HasParent:      &hasParentFlag,
+		ExcludeContent: true,
 	}
 	if creatorID, err := util.ConvertStringToInt32(c.QueryParam("creatorId")); err == nil {
 		findMemoMessage.CreatorID = &creatorID
